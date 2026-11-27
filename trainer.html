@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css?v=4">
+<link rel="stylesheet" href="assets/style.css?v=5">
 </head>
 <body>
 <div class="wrap">
@@ -87,7 +87,7 @@ function ask(w,kind,done,hd){
   const toEs=kind.endsWith("-es"),mc=kind.startsWith("mc");let opts=[],fin=false;
   if(mc)opts=shuffle([{t:toEs?w.es:w.ru,ok:true},...distractors(w,toEs)]);
   S.innerHTML=hd+`<div class="lbl">${LBL[kind]}</div><div class="prompt"><span>${esc(toEs?w.ru:w.es)}</span></div>`+
-   (mc?`<div class="opts">${opts.map((o,i)=>`<button class="opt" type="button" data-i="${i}"><kbd>${i+1}</kbd><span>${esc(o.t)}</span></button>`).join("")}</div>`
+   (mc?`<div class="opts">${opts.map((o,i)=>`<button class="opt" type="button" data-i="${i}"><kbd>${i+1}</kbd><span>${esc(o.t)}</span></button>`).join("")}</div><div class="err" id="er" aria-live="polite"></div><div class="row" id="mcr"><button class="btn main" type="button" id="ck">Проверить</button></div>`
    :`<form id="f" autocomplete="off"><input type="text" id="in" placeholder="${toEs?"Ответ по-испански":"Ответ по-русски"}" autocapitalize="off" autocorrect="off" spellcheck="false" lang="${toEs?"es":"ru"}" aria-label="Ваш ответ">${toEs?`<div class="acc" aria-label="Буквы с ударением">${"áéíóúñü¿¡".split("").map(c=>`<button type="button" data-ch="${c}">${c}</button>`).join("")}</div>`:""}<div class="err" id="er" aria-live="polite"></div><div class="row"><button class="btn main" type="submit">Проверить</button><button class="btn" type="button" id="idk">Не знаю</button></div></form>`)+
    `<div class="fb" id="fb" aria-live="polite"></div><div class="row" id="acts"></div>`;
   const finish=(ok,html,override)=>{fin=true;const fb=$("#fb");fb.className="fb "+(ok?"ok":"bad");fb.innerHTML=html;
@@ -98,11 +98,14 @@ function ask(w,kind,done,hd){
     cur={enter:go};$("#nx").focus();
   };
   if(mc){
-    const bs=[...S.querySelectorAll(".opt")];
-    bs.forEach(b=>b.onclick=()=>{if(fin)return;const o=opts[+b.dataset.i],ok=o.ok;
-      bs.forEach((x,i)=>{x.disabled=true;if(opts[i].ok)x.classList.add("ok")});if(!ok)b.classList.add("bad");
-      finish(ok,ok?"Верно!":`Правильно: <b>${esc(toEs?w.es:w.ru)}</b>${o.gl?`<span class="note">Вы выбрали ${esc(o.gl)}</span>`:""}`,false)});
-    cur={key:k=>{if(bs[k-1]&&!fin)bs[k-1].click()}};
+    const bs=[...S.querySelectorAll(".opt")];let pick=-1;
+    const choose=i=>{if(fin)return;pick=i;bs.forEach((x,j)=>{x.classList.toggle("sel",j===i);x.setAttribute("aria-pressed",j===i)});$("#er").textContent=""};
+    const confirm=()=>{if(fin)return;if(pick<0){$("#er").textContent="Сначала выберите вариант";return}
+      const b=bs[pick],o=opts[pick],ok=o.ok;$("#mcr").style.display="none";
+      bs.forEach((x,i)=>{x.disabled=true;x.classList.remove("sel");if(opts[i].ok)x.classList.add("ok")});if(!ok)b.classList.add("bad");
+      finish(ok,ok?"Верно!":`Правильно: <b>${esc(toEs?w.es:w.ru)}</b>${o.gl?`<span class="note">Вы выбрали ${esc(o.gl)}</span>`:""}`,false)};
+    bs.forEach((b,i)=>{b.setAttribute("aria-pressed","false");b.onclick=()=>choose(i)});$("#ck").onclick=confirm;
+    cur={key:k=>{if(bs[k-1])choose(k-1)},enter:confirm};
   }else{
     const inp=$("#in");inp.focus();inp.oninput=()=>{$("#er").textContent=""};
     S.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>{inp.setRangeText(b.dataset.ch,inp.selectionStart,inp.selectionEnd,"end");inp.focus();$("#er").textContent=""});
@@ -214,7 +217,7 @@ function listAll(){
     STATS={};store.del(SK);MODES.forEach(m=>clearRun(m[0]));MIS.clear();saveMis();updProg();listAll()};
   cur=null;
 }
-const MODES=[["mix","Микс","10 слов за раз, у каждого три этапа: выбор по-испански, перевод на русский, перевод на испанский. Ошибка — слово вернётся через несколько ответов. Сначала идут слабые и новые слова."],["cards","Карточки","Посмотрите слово, переверните карточку и честно отметьте, знаете ли вы его."],["mc-ru-es","Выбор: рус → исп","Видите русское слово, выбираете испанское из четырёх похожих вариантов. Можно нажимать 1–4."],["mc-es-ru","Выбор: исп → рус","Видите испанское слово, выбираете русский перевод."],["type-es-ru","Ввод: исп → рус","Видите испанское слово, пишете перевод по-русски. Опечатки прощаются, есть кнопка «Я был прав»."],["type-ru-es","Ввод: рус → исп","Видите русское слово, пишете по-испански. Артикль можно не писать, но ударения обязательны."],["pairs","Пары","Соедините пять похожих испанских слов с их переводами."],["mis","Ошибки","Слова, в которых вы ошиблись, в микс-режиме."],["list","Все слова","Весь словарь набора и ваш прогресс по каждому слову."]];
+const MODES=[["mix","Микс","10 слов за раз, у каждого три этапа: выбор по-испански, перевод на русский, перевод на испанский. Ошибка — слово вернётся через несколько ответов. Сначала идут слабые и новые слова."],["cards","Карточки","Посмотрите слово, переверните карточку и честно отметьте, знаете ли вы его."],["mc-ru-es","Выбор: рус → исп","Видите русское слово, выбираете испанское из четырёх похожих вариантов и нажимаете «Проверить». С клавиатуры: 1–4 и Enter."],["mc-es-ru","Выбор: исп → рус","Видите испанское слово, выбираете русский перевод и нажимаете «Проверить»."],["type-es-ru","Ввод: исп → рус","Видите испанское слово, пишете перевод по-русски. Опечатки прощаются, есть кнопка «Я был прав»."],["type-ru-es","Ввод: рус → исп","Видите русское слово, пишете по-испански. Артикль можно не писать, но ударения обязательны."],["pairs","Пары","Соедините пять похожих испанских слов с их переводами."],["mis","Ошибки","Слова, в которых вы ошиблись, в микс-режиме."],["list","Все слова","Весь словарь набора и ваш прогресс по каждому слову."]];
 function updChips(){const c=document.querySelector('[data-m="mis"]');if(c)c.textContent="Ошибки"+(MIS.size?` (${MIS.size})`:"")}
 function start(m,sv){
   cur=null;
@@ -233,7 +236,7 @@ function go(m){if(location.hash!=="#"+m)location.hash=m;else run(m)}
 $("#modes").innerHTML=MODES.map(([k,t])=>`<button class="chip" type="button" data-m="${k}" aria-pressed="false">${t}</button>`).join("");
 document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>go(c.dataset.m));
 document.addEventListener("keydown",e=>{if(!cur)return;
-  if(e.key==="Enter"&&cur.enter&&!(e.target instanceof HTMLButtonElement)){e.preventDefault();cur.enter()}
+  if(e.key==="Enter"&&cur.enter&&(!(e.target instanceof HTMLButtonElement)||e.target.classList.contains("opt"))){e.preventDefault();cur.enter()}
   else if(cur.key&&/^[1-4]$/.test(e.key)&&!(e.target instanceof HTMLInputElement))cur.key(+e.key)});
 window.addEventListener("hashchange",()=>run(location.hash.slice(1)));
 $("#sub").textContent=`${W.length} слов и выражений${meta.sub?" · "+meta.sub:""} · `;$("#sub").append(Object.assign(document.createElement("span"),{id:"prog"}));updProg();

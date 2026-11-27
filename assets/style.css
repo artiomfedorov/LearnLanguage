@@ -27,7 +27,7 @@ h1{font:800 clamp(28px,5vw,40px)/1.1 "Nunito",system-ui,sans-serif;margin:6px 0 
 .opt:hover:not(:disabled){border-color:var(--mari)}.opt:disabled{cursor:default}
 .opt kbd{flex:none;font:700 12px/1 "Nunito Sans",sans-serif;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
 .opt.ok{background:var(--okbg);border-color:var(--ok);color:var(--ok)}.opt.bad{background:var(--badbg);border-color:var(--bad);color:var(--bad)}
-.opt.sel{border-color:var(--vio);box-shadow:inset 0 0 0 2px var(--vio)}.opt.done{opacity:.35}
+.opt.sel{border-color:var(--vio);box-shadow:inset 0 0 0 2px var(--vio);background:light-dark(#efe9fd,#2d2150);font-weight:700}.opt.done{opacity:.35}
 input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px 14px;min-height:52px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)}
 input:focus-visible,button:focus-visible{outline:3px solid var(--vio);outline-offset:2px}
 .acc{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.acc button{font:inherit;font-size:17px;min-width:44px;min-height:40px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
