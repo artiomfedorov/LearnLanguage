@@ -6,7 +6,7 @@
 <title>Испанский тренажёр</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -109,7 +109,7 @@ function ask(w,kind,done,hd){
     const inp=$("#in");inp.focus();inp.oninput=()=>{$("#er").textContent=""};
     S.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>{inp.setRangeText(b.dataset.ch,inp.selectionStart,inp.selectionEnd,"end");inp.focus();$("#er").textContent=""});
     const check=skip=>{if(fin)return;const v=inp.value;if(!skip&&!v.trim()){$("#er").textContent="Сначала введите ответ";inp.focus();return}
-      inp.disabled=true;S.querySelectorAll("#f button").forEach(b=>b.disabled=true);
+      inp.disabled=true;S.querySelectorAll("#f button").forEach(b=>b.disabled=true);S.querySelectorAll("#f .row,#f .acc").forEach(x=>x.style.display="none");
       if(skip)return finish(false,`Ответ: <b>${esc(toEs?allEs(w):w.ru)}</b>`,false);
       const r=toEs?checkEs(w,v):checkRu(w,v);finish(r.ok,r.html,!toEs&&!r.ok)};
     $("#f").onsubmit=e=>{e.preventDefault();check(false)};$("#idk").onclick=()=>check(true);cur={};
