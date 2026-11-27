@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Испанские тренажёры</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<svg class="picado" id="pic" viewBox="0 0 1200 74" preserveAspectRatio="xMidYMin slice" aria-hidden="true"></svg>
+<div class="wrap">
+  <h1>Испанские тренажёры</h1>
+  <p class="lead">Слова с лекций: микс, карточки, выбор из похожих вариантов, ввод перевода и пары. Прогресс сохраняется в вашем браузере и общий для всех наборов.</p>
+  <div id="hero"></div>
+  <h2>Все тренажёры</h2>
+  <div class="grid" id="list"><p class="sub">Загружаю…</p></div>
+  <p class="foot">Слово считается выученным после 3 правильных ответов подряд.</p>
+</div>
+<script src="assets/picado.js"></script>
+<script>
+{
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let STATS={};try{STATS=JSON.parse(localStorage.getItem("espanol-stats")||"{}")||{}}catch(e){}
+const fmt=d=>{try{return new Date(d+"T12:00:00").toLocaleDateString("ru-RU",{day:"numeric",month:"long",year:"numeric"})}catch(e){return d}};
+const prog=(words,learned)=>`<div class="bar"><i style="width:${words?Math.round(learned/words*100):0}%"></i></div><div class="m">выучено ${learned} из ${words}</div>`;
+const list=document.getElementById("list"),hero=document.getElementById("hero");
+fetch("sets/index.json",{cache:"no-cache"}).then(r=>{if(!r.ok)throw 0;return r.json()}).then(async ix=>{
+  const sets=[...ix.sets].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  const info=await Promise.all(sets.map(s=>fetch("sets/"+encodeURIComponent(s.id)+".txt",{cache:"no-cache"}).then(r=>r.ok?r.text():"").catch(()=>"").then(t=>{
+    const es=t.trim()?t.trim().split("\n").map(l=>l.split("|")[0].trim()):[];
+    return{...s,words:es.length,learned:es.filter(e=>(STATS[e]||{}).s>=3).length}})));
+  const L=info.find(s=>s.id===ix.latest);
+  if(L)hero.innerHTML=`<a class="hero" href="latest/"><span class="badge">Последнее задание</span><div class="t">${esc(L.title)}</div><div class="m">${L.words} слов${L.date?" · "+esc(fmt(L.date)):""}</div>${prog(L.words,L.learned)}<span class="go">Открыть →</span></a>`;
+  list.innerHTML=info.map(s=>`<a class="card" href="trainer.html?set=${encodeURIComponent(s.id)}"><div class="t">${esc(s.title)}</div><div class="m">${s.words} слов${s.date?" · "+esc(fmt(s.date)):""}</div>${prog(s.words,s.learned)}<span class="go">Открыть →</span></a>`).join("")||`<p class="sub">Пока нет ни одного тренажёра.</p>`;
+}).catch(()=>{list.innerHTML=`<p class="sub">Не удалось загрузить список. Обновите страницу.</p>`});
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+/* Shared styles for the catalog and the trainer.
+   VOICE: warm, playful study tool, like a friend quizzing you over coffee
+   IDEA: a fiesta of papel picado (Coco and Día de Muertos run through these lessons)
+   PICTURE: the working quiz card itself, under a strip of cut-paper flags
+   COLOUR and TYPE: marigold lead, magenta support, teal accent; Lilita One + Nunito Sans
+   LAYOUT: one centred column; title, mode chips, big quiz card; stacks naturally on phones */
+:root{color-scheme:light dark;--bg:light-dark(#fffaf4,#160c28);--ink:light-dark(#2b1437,#f5edfb);--muted:light-dark(#6e5b7a,#b8a7cb);--card:light-dark(#ffffff,#221539);--line:light-dark(#eedfce,#3b2a5a);--mari:#f28a17;--mag:light-dark(#c8175f,#ff5c9d);--teal:#0f9488;--vio:#7b4fe0;--ok:light-dark(#08774f,#63d9a7);--okbg:light-dark(#e4f6ee,#123a2e);--bad:light-dark(#c3123e,#ff8aa5);--badbg:light-dark(#fde7ec,#3d1424)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Nunito Sans",system-ui,sans-serif;overflow-x:clip}
+.picado{display:block;width:100%;height:74px}.picado .h{fill:var(--bg)}.picado .str{stroke:var(--muted);stroke-width:1.5;fill:none}
+.wrap{max-width:780px;margin:0 auto;padding:4px max(4vw,16px) 48px}
+h1{font:400 clamp(32px,6vw,46px)/1.05 "Lilita One",system-ui,sans-serif;margin:6px 0 4px;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 16px}
+.badge[hidden]{display:none}.badge{display:inline-block;background:var(--mag);color:#fff;font-size:13px;font-weight:700;padding:3px 12px;border-radius:999px}
+.modes{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin:0 -2px 4px;scrollbar-width:thin}
+.chip{flex:none;font:inherit;font-size:15px;font-weight:700;padding:9px 14px;min-height:44px;border-radius:999px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.chip:hover{border-color:var(--mari)}.chip[aria-pressed=true]{background:var(--mari);border-color:var(--mari);color:#2b1300}
+.desc{color:var(--muted);font-size:15px;margin:2px 0 14px;min-height:24px}
+.stage{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:clamp(18px,4vw,32px);min-height:360px}
+.meta{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-size:14px;color:var(--muted);margin-bottom:8px}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-bottom:18px}.bar i{display:block;height:100%;background:var(--teal);transition:width .3s}
+.lbl{font-size:14px;font-weight:700;color:var(--mag)}
+.prompt{font:400 clamp(28px,6vw,40px)/1.15 "Lilita One",system-ui,sans-serif;margin:8px 0 22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;overflow-wrap:anywhere}
+.shake{animation:sh .35s}@keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
+.opt{display:flex;gap:10px;align-items:center;text-align:left;font:inherit;font-size:17px;padding:12px 14px;min-height:52px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;overflow-wrap:anywhere}
+.opt:hover:not(:disabled){border-color:var(--mari)}.opt:disabled{cursor:default}
+.opt kbd{flex:none;font:700 12px/1 "Nunito Sans",sans-serif;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+.opt.ok{background:var(--okbg);border-color:var(--ok);color:var(--ok)}.opt.bad{background:var(--badbg);border-color:var(--bad);color:var(--bad)}
+.opt.sel{border-color:var(--vio);box-shadow:inset 0 0 0 2px var(--vio)}.opt.done{opacity:.35}
+input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px 14px;min-height:52px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)}
+input:focus-visible,button:focus-visible{outline:3px solid var(--vio);outline-offset:2px}
+.acc{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.acc button{font:inherit;font-size:17px;min-width:44px;min-height:40px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.btn{font:inherit;font-weight:700;font-size:16px;padding:10px 18px;min-height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.btn.main{background:var(--ink);color:var(--bg);border-color:var(--ink)}.btn:disabled{opacity:.5;cursor:default}
+.link{font:inherit;font-size:14px;font-weight:700;background:none;border:0;color:var(--teal);cursor:pointer;padding:8px 0;min-height:44px}
+.fb{margin-top:16px;font-size:17px;min-height:26px}.fb.ok{color:var(--ok)}.fb.bad{color:var(--bad)}.fb b{color:var(--ink)}
+.note{display:block;color:var(--muted);font-size:14px;margin-top:2px}
+.err{color:var(--bad);font-size:14px;min-height:20px;margin-top:6px}
+.dots{display:inline-flex;gap:5px;align-items:center}.dots b{width:11px;height:11px;border-radius:50%;background:var(--line)}.dots b.on{background:var(--teal)}.dots b.now{background:var(--mari)}
+.flash{display:grid;gap:8px;place-items:center;text-align:center;width:100%;min-height:220px;padding:20px;border-radius:16px;border:2px dashed var(--mari);background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
+.flash .fw{font:400 clamp(28px,6vw,40px)/1.15 "Lilita One",sans-serif;overflow-wrap:anywhere}.flash .back{font-size:20px;color:var(--teal);font-weight:700}.flash .hint{font-size:14px;color:var(--muted)}
+.pairs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:12px}.pairs .col{display:grid;gap:10px;align-content:start}
+.end{text-align:center;padding:30px 0}.end .big{font:400 clamp(26px,5vw,36px)/1.15 "Lilita One",sans-serif;text-wrap:balance}.end .row{justify-content:center}
+table{width:100%;border-collapse:collapse;font-size:16px}td{padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:middle}td:first-child{font-weight:700}
+.foot{color:var(--muted);font-size:13px;margin-top:18px}
+.sum{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.tag{display:inline-block;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap}.t-learned{background:var(--okbg);color:var(--ok)}.t-weak{background:var(--badbg);color:var(--bad)}.t-prog{background:light-dark(#fdebd3,#3a2810);color:light-dark(#8a4a00,#ffbf6b)}.t-new{background:var(--line);color:var(--muted)}td.st{text-align:right;white-space:nowrap}.cnt{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+@media(max-width:600px){td.st{white-space:normal}}
+@media(max-width:600px){.pairs .opt{font-size:15px;padding:10px}.opt kbd{display:none}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.back{display:inline-block;color:var(--teal);font-weight:700;text-decoration:none;padding:8px 0;margin-right:10px}.back:hover{text-decoration:underline}
+.lead{font-size:17px;color:var(--muted);margin:0 0 22px;max-width:60ch}
+.hero{display:block;text-decoration:none;color:var(--ink);background:var(--card);border:2px solid var(--mari);border-radius:18px;padding:clamp(18px,4vw,28px);margin-bottom:28px}
+.hero:hover,.card:hover{border-color:var(--mag)}
+.hero .t{font:400 clamp(26px,5vw,36px)/1.1 "Lilita One",system-ui,sans-serif;margin:10px 0 6px}
+h2{font:400 24px/1.2 "Lilita One",system-ui,sans-serif;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}
+.card{display:block;text-decoration:none;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:16px 18px}
+.card .t{font-size:19px;font-weight:700;margin-bottom:2px}.card .m,.hero .m{color:var(--muted);font-size:14px}
+.card .bar,.hero .bar{margin:12px 0 6px}.go{display:inline-block;margin-top:8px;font-weight:700;color:var(--teal)}

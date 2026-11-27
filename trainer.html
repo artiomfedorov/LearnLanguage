@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Испанский тренажёр</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<svg class="picado" id="pic" viewBox="0 0 1200 74" preserveAspectRatio="xMidYMin slice" aria-hidden="true"></svg>
+<div class="wrap">
+  <a class="back" href="./">← Все тренажёры</a>
+  <span class="badge" id="badge" hidden>Последнее задание</span>
+  <h1 id="ttl">Тренажёр</h1>
+  <p class="sub" id="sub">Загружаю слова…</p>
+  <nav class="modes" id="modes" aria-label="Режимы"></nav>
+  <p class="desc" id="desc"></p>
+  <main class="stage" id="stage" aria-live="polite"></main>
+  <p class="foot">Прогресс и ошибки хранятся только в этом браузере: на другом устройстве будет свой прогресс.</p>
+</div>
+<script src="assets/picado.js"></script>
+<script>
+{
+const qs=new URLSearchParams(location.search);
+const fail=msg=>{document.getElementById("stage").innerHTML=`<div class="end"><div class="big">${msg}</div><p class="sub"><a href="./">Все тренажёры</a></p></div>`};
+fetch("sets/index.json",{cache:"no-cache"}).then(r=>{if(!r.ok)throw 0;return r.json()}).then(ix=>{
+  let id=qs.get("set")||"latest";if(id==="latest")id=ix.latest;
+  const meta=ix.sets.find(s=>s.id===id);if(!meta)return fail("Такого тренажёра нет");
+  return fetch("sets/"+encodeURIComponent(id)+".txt",{cache:"no-cache"}).then(r=>{if(!r.ok)throw 0;return r.text()}).then(t=>main(t,meta,id===ix.latest));
+}).catch(()=>fail("Не удалось загрузить слова. Обновите страницу."));
+function main(RAW,meta,isLatest){
+const SET={id:meta.id,lang:meta.lang||"es-ES",isLatest};
+document.title=meta.title+" · испанский";document.getElementById("ttl").textContent=meta.title;
+const sp=s=>(s||"").split(";").map(x=>x.trim()).filter(Boolean);
+const W=RAW.trim().split("\n").map((l,i)=>{const p=l.split("|");return{id:i,es:p[0].trim(),ru:(p[1]||"").trim(),ra:sp(p[2]),ea:sp(p[3]),cf:sp(p[4]).map(s=>{const q=s.split("=");return{es:q[0].trim(),ru:(q[1]||"").trim()}})}});
+const $=s=>document.querySelector(s),S=$("#stage");
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const MK="espanol-mis-"+SET.id;let MIS=new Set();try{MIS=new Set(JSON.parse(localStorage.getItem(MK)||"[]"))}catch(e){}
+const saveMis=()=>{try{localStorage.setItem(MK,JSON.stringify([...MIS]))}catch(e){}updChips()};
+const addMis=w=>{MIS.add(w.id);saveMis()},delMis=w=>{MIS.delete(w.id);saveMis()};
+const allEs=w=>[w.es,...w.ea].join(" / ");
+const ART=/^(el|la|los|las)\s+/;
+const cleanEs=s=>s.toLowerCase().replace(/[¿?¡!.,;:"«»]/g,"").replace(/\s+/g," ").trim();
+const deacc=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"");
+const cleanRu=s=>s.toLowerCase().replace(/ё/g,"е").replace(/\([^)]*\)/g," ").replace(/[^a-zа-я0-9\s]/g," ").replace(/\s+/g," ").trim();
+const lev=(a,b)=>{let p=Array.from({length:b.length+1},(_,j)=>j);for(let i=1;i<=a.length;i++){const c=[i];for(let j=1;j<=b.length;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[b.length]};
+function checkEs(w,v){
+  const u=cleanEs(v),C=[w.es,...w.ea],cs=C.map(cleanEs);
+  for(const c of cs)if(u===c)return{ok:true,html:"Верно!"};
+  for(const c of cs){const m=c.match(ART);if(m&&u===c.slice(m[0].length))return{ok:true,html:`Верно! <span class="note">Артикль: <b>${esc(m[1])}</b> → ${esc(c)}</span>`}}
+  for(const c of cs){const m=c.match(ART),um=u.match(ART);if(m&&um&&um[1]!==m[1]&&u.slice(um[0].length)===c.slice(m[0].length))return{ok:false,html:`Неверный артикль. Правильно: <b>${esc(c)}</b>`}}
+  for(const c of cs)if(deacc(c.replace(ART,""))===deacc(u.replace(ART,"")))return{ok:false,html:`Почти! Ошибка в ударении или ñ. Правильно: <b>${esc(allEs(w))}</b>`};
+  return{ok:false,html:`Неверно. Правильно: <b>${esc(allEs(w))}</b>`};
+}
+function checkRu(w,v){
+  const u=cleanRu(v),C=[w.ru,...w.ru.split(/[,;]\s*/),...w.ra].map(cleanRu).filter(Boolean);
+  const also=w.ra.length?`<span class="note">Также подходит: ${esc(w.ra.join(", "))}</span>`:"";
+  if(C.includes(u))return{ok:true,html:`Верно! <span class="note">${esc(w.ru)}</span>`};
+  for(const c of C){const t=c.length>=9?2:c.length>=5?1:0;if(t&&lev(u,c)<=t)return{ok:true,html:`Засчитано, но с опечаткой. Правильно: <b>${esc(w.ru)}</b>`}}
+  return{ok:false,html:`Неверно. Правильно: <b>${esc(w.ru)}</b>${also}`};
+}
+const ruSet=w=>new Set([w.ru,...w.ru.split(/[,;]\s*/),...w.ra].map(cleanRu).filter(Boolean));
+const esSet=w=>new Set([w.es,...w.ea].map(s=>cleanEs(s).replace(ART,"")));
+function sim(a,b,isEs){
+  let x=isEs?cleanEs(a):cleanRu(a),y=isEs?cleanEs(b):cleanRu(b),s=0;
+  if(isEs){const ax=x.match(ART),by=y.match(ART);if(ax&&by&&ax[1]===by[1])s+=1.5;else if(!ax===!by)s+=.5;x=x.replace(ART,"");y=y.replace(ART,"")}
+  s+=4*(1-lev(x,y)/(Math.max(x.length,y.length)||1));
+  if(x.split(" ").length===y.split(" ").length)s+=1;
+  if(x.slice(-2)===y.slice(-2))s+=1;if(x.slice(-3)===y.slice(-3))s+=.5;
+  if(x[0]===y[0])s+=.6;if(x.slice(0,2)===y.slice(0,2))s+=.5;
+  return s-Math.abs(x.length-y.length)/8;
+}
+function distractors(w,toEs){
+  const good=toEs?esSet(w):ruSet(w),me=toEs?w.es:w.ru,seen=new Set([toEs?cleanEs(me):cleanRu(me)]),c=[];
+  const add=(t,gl,s,keys)=>{const k=toEs?cleanEs(t):cleanRu(t);if(!k||seen.has(k))return;for(const x of keys)if(good.has(x))return;seen.add(k);c.push({t,ok:false,gl,s})};
+  const sc=(es,ru)=>toEs?sim(w.es,es,true):sim(w.es,es,true)+.5*sim(w.ru,ru,false);
+  w.cf.forEach(f=>{if(toEs)add(f.es,f.ru?`«${f.es}» — это «${f.ru}»`:"",sc(f.es,f.ru)+2.5,[cleanEs(f.es).replace(ART,"")]);else if(f.ru)add(f.ru,`«${f.ru}» — это ${f.es}`,sc(f.es,f.ru)+2.5,[cleanRu(f.ru),...f.ru.split(/[,;]\s*/).map(cleanRu)])});
+  W.forEach(x=>{if(x.id!==w.id)add(toEs?x.es:x.ru,toEs?`«${x.es}» — это «${x.ru}»`:`«${x.ru}» — это ${x.es}`,sc(x.es,x.ru),toEs?esSet(x):ruSet(x))});
+  c.sort((a,b)=>b.s-a.s);return shuffle(c.slice(0,5)).slice(0,3);
+}
+let cur=null;
+const head=(pct,l,r)=>`<div class="meta"><span>${l}</span><span>${r}</span></div><div class="bar"><i style="width:${Math.round(pct)}%"></i></div>`;
+const LBL={"mc-ru-es":"Выберите перевод на испанский","mc-es-ru":"Выберите перевод на русский","type-es-ru":"Напишите перевод по-русски","type-ru-es":"Напишите перевод по-испански"};
+function ask(w,kind,done,hd){
+  const toEs=kind.endsWith("-es"),mc=kind.startsWith("mc");let opts=[],fin=false;
+  if(mc)opts=shuffle([{t:toEs?w.es:w.ru,ok:true},...distractors(w,toEs)]);
+  S.innerHTML=hd+`<div class="lbl">${LBL[kind]}</div><div class="prompt"><span>${esc(toEs?w.ru:w.es)}</span></div>`+
+   (mc?`<div class="opts">${opts.map((o,i)=>`<button class="opt" type="button" data-i="${i}"><kbd>${i+1}</kbd><span>${esc(o.t)}</span></button>`).join("")}</div>`
+   :`<form id="f" autocomplete="off"><input type="text" id="in" placeholder="${toEs?"Ответ по-испански":"Ответ по-русски"}" autocapitalize="off" autocorrect="off" spellcheck="false" lang="${toEs?"es":"ru"}" aria-label="Ваш ответ">${toEs?`<div class="acc" aria-label="Буквы с ударением">${"áéíóúñü¿¡".split("").map(c=>`<button type="button" data-ch="${c}">${c}</button>`).join("")}</div>`:""}<div class="err" id="er" aria-live="polite"></div><div class="row"><button class="btn main" type="submit">Проверить</button><button class="btn" type="button" id="idk">Не знаю</button></div></form>`)+
+   `<div class="fb" id="fb" aria-live="polite"></div><div class="row" id="acts"></div>`;
+  const finish=(ok,html,override)=>{fin=true;const fb=$("#fb");fb.className="fb "+(ok?"ok":"bad");fb.innerHTML=html;
+    if(!ok)S.querySelector(".prompt").classList.add("shake");
+    $("#acts").innerHTML=`<button class="btn main" type="button" id="nx">Дальше →</button>`+(override?`<button class="btn" type="button" id="ov">Я был прав, засчитать</button>`:"");
+    let res=ok,gone=false;const go=()=>{if(gone)return;gone=true;cur=null;rec(w,res);done(res)};
+    $("#nx").onclick=go;if(override)$("#ov").onclick=()=>{res=true;go()};
+    cur={enter:go};$("#nx").focus();
+  };
+  if(mc){
+    const bs=[...S.querySelectorAll(".opt")];
+    bs.forEach(b=>b.onclick=()=>{if(fin)return;const o=opts[+b.dataset.i],ok=o.ok;
+      bs.forEach((x,i)=>{x.disabled=true;if(opts[i].ok)x.classList.add("ok")});if(!ok)b.classList.add("bad");
+      finish(ok,ok?"Верно!":`Правильно: <b>${esc(toEs?w.es:w.ru)}</b>${o.gl?`<span class="note">Вы выбрали ${esc(o.gl)}</span>`:""}`,false)});
+    cur={key:k=>{if(bs[k-1]&&!fin)bs[k-1].click()}};
+  }else{
+    const inp=$("#in");inp.focus();inp.oninput=()=>{$("#er").textContent=""};
+    S.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>{inp.setRangeText(b.dataset.ch,inp.selectionStart,inp.selectionEnd,"end");inp.focus();$("#er").textContent=""});
+    const check=skip=>{if(fin)return;const v=inp.value;if(!skip&&!v.trim()){$("#er").textContent="Сначала введите ответ";inp.focus();return}
+      inp.disabled=true;S.querySelectorAll("#f button").forEach(b=>b.disabled=true);
+      if(skip)return finish(false,`Ответ: <b>${esc(toEs?allEs(w):w.ru)}</b>`,false);
+      const r=toEs?checkEs(w,v):checkRu(w,v);finish(r.ok,r.html,!toEs&&!r.ok)};
+    $("#f").onsubmit=e=>{e.preventDefault();check(false)};$("#idk").onclick=()=>check(true);cur={};
+  }
+}
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const SIG=(()=>{let h=5381;for(const c of W.map(w=>w.es).join("|"))h=(h*33+c.charCodeAt(0))>>>0;return h.toString(36)})();
+const SK="espanol-stats";let STATS=store.get(SK)||{};
+const stat=w=>STATS[w.es]||{r:0,w:0,s:0,t:0};
+const status=w=>{const s=stat(w);return s.s>=3?"learned":s.w>0?"weak":s.r>0?"prog":"new"};
+const TAG={learned:"выучено",weak:"слабое",prog:"в процессе",new:"новое"};
+function rec(w,ok){const s=Object.assign({},stat(w));s.t=Date.now();if(ok){s.r++;s.s++}else{s.w++;s.s=0}STATS[w.es]=s;store.set(SK,STATS);updProg()}
+function updProg(){const n=W.filter(w=>status(w)==="learned").length;$("#prog").textContent=`выучено ${n} из ${W.length}`}
+function order(list,all){
+  const g={weak:[],prog:[],new:[],learned:[]};list.forEach(w=>g[status(w)].push(w));
+  const ratio=w=>{const s=stat(w);return(s.w+1)/(s.r+1)};
+  g.weak=shuffle(g.weak).sort((a,b)=>ratio(b)-ratio(a));g.learned.sort((a,b)=>stat(a).t-stat(b).t);
+  const rest=[...g.weak,...shuffle(g.prog),...shuffle(g.new)];
+  return all||!rest.length?[...rest,...g.learned]:[...rest,...g.learned.slice(0,5)];
+}
+const runKey=m=>"espanol-run-"+SET.id+"-"+m;
+const saveRun=(m,o)=>{o.sig=SIG;store.set(runKey(m),o)};
+const loadRun=m=>{const o=store.get(runKey(m));return o&&o.sig===SIG?o:null};
+const clearRun=m=>store.del(runKey(m));
+const ids=a=>a.map(w=>w.id),byId=a=>a.map(i=>W[i]).filter(Boolean);
+function finishScreen(title,again,extra){
+  S.innerHTML=`<div class="end"><div class="big">${title}</div><p class="sub">${extra||""}</p><div class="row"><button class="btn main" type="button" id="ag">Ещё раз</button>${MIS.size?`<button class="btn" type="button" id="gm">Повторить ошибки (${MIS.size})</button>`:""}</div></div>`;
+  $("#ag").onclick=again;const g=$("#gm");if(g)g.onclick=()=>go("mis");cur={enter:again};
+}
+function mix(list,isMis,sv){
+  const mode=isMis?"mis":"mix",K=["mc-ru-es","type-es-ru","type-ru-es"];let N,pool,q,learned;
+  const take=()=>shuffle(pool.splice(0,10)).map(w=>({w,st:0,f:0,wrong:false}));
+  if(sv){N=sv.N;learned=sv.learned;pool=byId(sv.pool);q=sv.q.filter(o=>W[o.id]).map(o=>({w:W[o.id],st:o.st,f:o.f,wrong:o.wrong}))}
+  else{pool=order(list,isMis);N=pool.length;learned=0;q=take()}
+  const step=()=>{
+    if(!q.length){if(pool.length)q=take();else{clearRun(mode);return finishScreen(`Все ${N} слов пройдены!`,()=>start(mode,null),"Каждое слово прошло три этапа.")}}
+    saveRun(mode,{N,learned,pool:ids(pool),q:q.map(x=>({id:x.w.id,st:x.st,f:x.f,wrong:x.wrong})),info:`${isMis?"Ошибки":"Микс"}: выучено ${learned} из ${N}`});
+    const it=q.shift();
+    const dots=`<span class="dots" title="Этап ${it.st+1} из 3">${[0,1,2].map(k=>`<b class="${k<it.st?"on":k===it.st?"now":""}"></b>`).join("")} этап ${it.st+1} из 3</span>`;
+    ask(it.w,K[it.st],ok=>{
+      if(ok){it.wrong=false;it.st++;if(it.st>=3){learned++;if(isMis)delMis(it.w)}else q.push(it)}
+      else{it.f++;it.wrong=true;addMis(it.w);q.splice(Math.min([5,3,2,1][Math.min(it.f-1,3)],q.length),0,it)}
+      if(pool.length&&q.length&&q.every(x=>x.wrong)){const m=take();q.forEach((x,k)=>m.splice(Math.min(k,m.length),0,x));q=m}
+      step();
+    },head(learned/N*100,`Выучено ${learned} из ${N}`,dots));
+  };step();
+}
+function linear(kind,sv){
+  let q,N,n,first,seen;
+  if(sv){q=byId(sv.q);N=sv.N;n=sv.n;first=sv.first;seen=new Set(sv.seen)}else{q=order(W);N=q.length;n=0;first=0;seen=new Set()}
+  const name=MODES.find(x=>x[0]===kind)[1];
+  const step=()=>{if(!q.length){clearRun(kind);return finishScreen(`С первого раза: ${first} из ${N}`,()=>start(kind,null))}
+    saveRun(kind,{q:ids(q),N,n,first,seen:[...seen],info:`${name}: пройдено ${n} из ${N}`});
+    const w=q.shift();
+    ask(w,kind,ok=>{if(!seen.has(w.id)){seen.add(w.id);if(ok)first++}if(ok)n++;else{addMis(w);q.splice(Math.min(5,q.length),0,w)}step()},
+      head(n/N*100,`Пройдено ${n} из ${N}`,`С первого раза: ${first}`))};
+  step();
+}
+function cards(front,sv){
+  let q,N,n;if(sv){q=byId(sv.q);N=sv.N;n=sv.n;front=sv.front||front}else{q=order(W);N=q.length;n=0}
+  const step=()=>{if(!q.length){clearRun("cards");return finishScreen("Все карточки пройдены!",()=>start("cards",null))}
+    saveRun("cards",{q:ids(q),N,n,front,info:`Карточки: знаю ${n} из ${N}`});
+    const w=q[0],es=front==="es";let flipped=false;
+    S.innerHTML=head(n/N*100,`Знаю: ${n} из ${N}`,`<button class="link" type="button" id="sw">Сначала ${es?"русский":"испанский"}</button>`)+
+      `<button class="flash" type="button" id="fc"><span class="lbl">${es?"Испанский":"Русский"}</span><span class="fw">${esc(es?w.es:w.ru)}</span><span class="back" id="bk"></span><span class="hint">Нажмите, чтобы перевернуть</span></button>`+
+      `<div class="row"><button class="btn" type="button" id="no">Не знаю</button><button class="btn main" type="button" id="yes">Знаю</button></div>`;
+    const flip=()=>{if(flipped)return;flipped=true;$("#bk").textContent=es?w.ru:w.es;S.querySelector(".hint").textContent=""};
+    $("#fc").onclick=flip;$("#sw").onclick=()=>{front=es?"ru":"es";step()};
+    $("#yes").onclick=()=>{rec(w,true);q.shift();n++;step()};
+    $("#no").onclick=()=>{rec(w,false);q.shift();addMis(w);q.splice(Math.min(5,q.length),0,w);flipped?step():(flip(),setTimeout(step,1200))};
+    cur={enter:()=>flipped?$("#yes").click():flip()};
+  };step();
+}
+function pairs(sv){
+  let pool,N,errs,matched;if(sv){pool=byId(sv.pool);N=sv.N;errs=sv.errs;matched=sv.matched}else{pool=order(W);N=pool.length;errs=0;matched=0}
+  const next=()=>{if(!pool.length){clearRun("pairs");return finishScreen(`Все пары собраны! Ошибок: ${errs}`,()=>start("pairs",null))}
+    saveRun("pairs",{pool:ids(pool),N,errs,matched,info:`Пары: собрано ${matched} из ${N}`});
+    const seed=pool.shift(),set=[seed];pool.sort((a,b)=>sim(seed.es,b.es,true)-sim(seed.es,a.es,true));set.push(...pool.splice(0,4));
+    const L=shuffle(set),R=shuffle(set),missed=new Set();let sel=null,left=set.length;
+    const draw=()=>head(matched/N*100,`Собрано ${matched} из ${N}`,`Ошибок: ${errs}`);
+    S.innerHTML=`<div id="ph">${draw()}</div><div class="lbl">Нажмите слово слева, потом его перевод справа</div><div class="pairs"><div class="col">${L.map(w=>`<button class="opt" type="button" data-l="${w.id}">${esc(w.es)}</button>`).join("")}</div><div class="col">${R.map(w=>`<button class="opt" type="button" data-r="${w.id}">${esc(w.ru)}</button>`).join("")}</div></div>`;
+    S.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{if(b.disabled)return;S.querySelectorAll("[data-l]").forEach(x=>x.classList.remove("sel"));b.classList.add("sel");sel=b});
+    S.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{if(!sel||b.disabled)return;const lw=W[+sel.dataset.l];
+      if(sel.dataset.l===b.dataset.r){if(!missed.has(lw.id))rec(lw,true);sel.classList.remove("sel");[sel,b].forEach(x=>{x.classList.add("done");x.disabled=true});sel=null;matched++;left--;$("#ph").innerHTML=draw();
+        if(!left){saveRun("pairs",{pool:ids(pool),N,errs,matched,info:`Пары: собрано ${matched} из ${N}`});setTimeout(next,450)}}
+      else{errs++;if(!missed.has(lw.id)){missed.add(lw.id);rec(lw,false)}addMis(lw);b.classList.add("bad");$("#ph").innerHTML=draw();setTimeout(()=>b.classList.remove("bad"),500)}});
+    cur=null;
+  };next();
+}
+function mistakes(sv){
+  if(sv)return mix(null,true,sv);
+  const list=W.filter(w=>MIS.has(w.id));
+  if(!list.length){S.innerHTML=`<div class="end"><div class="big">Ошибок пока нет</div><p class="sub">Слова, в которых вы ошибётесь в любом режиме, появятся здесь. Пройдите их в микс-режиме, и они уйдут из списка.</p><div class="row"><button class="btn main" type="button" id="tm">Начать микс</button></div></div>`;$("#tm").onclick=()=>go("mix");cur=null;return}
+  mix(list,true);
+}
+function listAll(){
+  const c={learned:0,weak:0,prog:0,new:0};W.forEach(w=>c[status(w)]++);
+  const rows=order(W,true);
+  S.innerHTML=`<div class="sum">${["learned","weak","prog","new"].map(k=>`<span class="tag t-${k}">${TAG[k]}: ${c[k]}</span>`).join("")}</div>
+  <div class="meta"><span>${W.length} слов и выражений. Выучено — 3 правильных ответа подряд.</span><button class="link" type="button" id="rst">Сбросить прогресс</button></div>
+  <table><tbody>${rows.map(w=>{const s=stat(w),k=status(w);return `<tr><td>${esc(w.es)}</td><td>${esc(w.ru)}</td><td class="st"><span class="tag t-${k}">${TAG[k]}</span>${s.r+s.w?`<span class="cnt">${s.r} ✓ · ${s.w} ✗</span>`:""}</td></tr>`}).join("")}</tbody></table>`;
+  let armed=false;const r=$("#rst");
+  r.onclick=()=>{if(!armed){armed=true;r.textContent="Точно сбросить? Нажмите ещё раз";return}
+    STATS={};store.del(SK);MODES.forEach(m=>clearRun(m[0]));MIS.clear();saveMis();updProg();listAll()};
+  cur=null;
+}
+const MODES=[["mix","Микс","10 слов за раз, у каждого три этапа: выбор по-испански, перевод на русский, перевод на испанский. Ошибка — слово вернётся через несколько ответов. Сначала идут слабые и новые слова."],["cards","Карточки","Посмотрите слово, переверните карточку и честно отметьте, знаете ли вы его."],["mc-ru-es","Выбор: рус → исп","Видите русское слово, выбираете испанское из четырёх похожих вариантов. Можно нажимать 1–4."],["mc-es-ru","Выбор: исп → рус","Видите испанское слово, выбираете русский перевод."],["type-es-ru","Ввод: исп → рус","Видите испанское слово, пишете перевод по-русски. Опечатки прощаются, есть кнопка «Я был прав»."],["type-ru-es","Ввод: рус → исп","Видите русское слово, пишете по-испански. Артикль можно не писать, но ударения обязательны."],["pairs","Пары","Соедините пять похожих испанских слов с их переводами."],["mis","Ошибки","Слова, в которых вы ошиблись, в микс-режиме."],["list","Все слова","Весь словарь набора и ваш прогресс по каждому слову."]];
+function updChips(){const c=document.querySelector('[data-m="mis"]');if(c)c.textContent="Ошибки"+(MIS.size?` (${MIS.size})`:"")}
+function start(m,sv){
+  cur=null;
+  if(m==="mix")mix(W,false,sv);else if(m==="cards")cards("es",sv);else if(m==="pairs")pairs(sv);else if(m==="mis")mistakes(sv);else if(m==="list")listAll();else linear(m,sv);
+}
+function run(m){
+  if(!MODES.some(x=>x[0]===m))m="mix";cur=null;
+  document.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c.dataset.m===m));
+  $("#desc").textContent=MODES.find(x=>x[0]===m)[2];
+  const sv=m==="list"?null:loadRun(m);
+  if(sv){S.innerHTML=`<div class="end"><div class="big">Продолжить с того же места?</div><p class="sub">${esc(sv.info||"")}</p><div class="row"><button class="btn main" type="button" id="rc">Продолжить</button><button class="btn" type="button" id="rn">Начать заново</button></div></div>`;
+    $("#rc").onclick=()=>start(m,sv);$("#rn").onclick=()=>{clearRun(m);start(m,null)};cur={enter:()=>start(m,sv)};$("#rc").focus({preventScroll:true});return}
+  start(m,null);
+}
+function go(m){if(location.hash!=="#"+m)location.hash=m;else run(m)}
+$("#modes").innerHTML=MODES.map(([k,t])=>`<button class="chip" type="button" data-m="${k}" aria-pressed="false">${t}</button>`).join("");
+document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>go(c.dataset.m));
+document.addEventListener("keydown",e=>{if(!cur)return;
+  if(e.key==="Enter"&&cur.enter&&!(e.target instanceof HTMLButtonElement)){e.preventDefault();cur.enter()}
+  else if(cur.key&&/^[1-4]$/.test(e.key)&&!(e.target instanceof HTMLInputElement))cur.key(+e.key)});
+window.addEventListener("hashchange",()=>run(location.hash.slice(1)));
+$("#sub").textContent=`${W.length} слов и выражений${meta.sub?" · "+meta.sub:""} · `;$("#sub").append(Object.assign(document.createElement("span"),{id:"prog"}));updProg();
+if(SET.isLatest)$("#badge").hidden=false;
+updChips();run(location.hash.slice(1));
+}
+}
+</script>
+</body>
+</html>
