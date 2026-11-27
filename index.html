@@ -24,6 +24,7 @@
 </div>
 <script>
 {
+const plural=(n,a,b,c)=>{const m=n%10,h=n%100;return m===1&&h!==11?a:m>=2&&m<=4&&(h<12||h>14)?b:c};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let STATS={};try{STATS=JSON.parse(localStorage.getItem("espanol-stats")||"{}")||{}}catch(e){}
 const fmt=d=>{try{return new Date(d+"T12:00:00").toLocaleDateString("ru-RU",{day:"numeric",month:"long",year:"numeric"})}catch(e){return d}};
@@ -35,8 +36,8 @@ fetch("sets/index.json",{cache:"no-cache"}).then(r=>{if(!r.ok)throw 0;return r.j
     const es=t.trim()?t.trim().split("\n").map(l=>l.split("|")[0].trim()):[];
     return{...s,words:es.length,learned:es.filter(e=>(STATS[e]||{}).s>=3).length}})));
   const L=info.find(s=>s.id===ix.latest);
-  if(L)hero.innerHTML=`<a class="hero" href="latest/"><span class="badge">Последнее задание</span><div class="t">${esc(L.title)}</div><div class="m">${L.words} слов${L.date?" · "+esc(fmt(L.date)):""}</div>${prog(L.words,L.learned)}<span class="go">Открыть →</span></a>`;
-  list.innerHTML=info.map(s=>`<a class="card" href="trainer.html?set=${encodeURIComponent(s.id)}"><div class="t">${esc(s.title)}</div><div class="m">${s.words} слов${s.date?" · "+esc(fmt(s.date)):""}</div>${prog(s.words,s.learned)}<span class="go">Открыть →</span></a>`).join("")||`<p class="sub">Пока нет ни одного тренажёра.</p>`;
+  if(L)hero.innerHTML=`<a class="hero" href="latest/"><span class="badge">Последнее задание</span><div class="t">${esc(L.title)}</div><div class="m">${L.words} ${plural(L.words,"слово","слова","слов")}${L.date?" · "+esc(fmt(L.date)):""}</div>${prog(L.words,L.learned)}<span class="go">Открыть →</span></a>`;
+  list.innerHTML=info.map(s=>`<a class="card" href="trainer.html?set=${encodeURIComponent(s.id)}"><div class="t">${esc(s.title)}</div><div class="m">${s.words} ${plural(s.words,"слово","слова","слов")}${s.date?" · "+esc(fmt(s.date)):""}</div>${prog(s.words,s.learned)}<span class="go">Открыть →</span></a>`).join("")||`<p class="sub">Пока нет ни одного тренажёра.</p>`;
 }).catch(()=>{list.innerHTML=`<p class="sub">Не удалось загрузить список. Обновите страницу.</p>`});
 }
 </script>

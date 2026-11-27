@@ -34,6 +34,7 @@ fetch("sets/index.json",{cache:"no-cache"}).then(r=>{if(!r.ok)throw 0;return r.j
   return fetch("sets/"+encodeURIComponent(id)+".txt",{cache:"no-cache"}).then(r=>{if(!r.ok)throw 0;return r.text()}).then(t=>main(t,meta,id===ix.latest));
 }).catch(()=>fail("Не удалось загрузить слова. Обновите страницу."));
 function main(RAW,meta,isLatest){
+const plural=(n,a,b,c)=>{const m=n%10,h=n%100;return m===1&&h!==11?a:m>=2&&m<=4&&(h<12||h>14)?b:c};
 const SET={id:meta.id,lang:meta.lang||"es-ES",isLatest};
 document.title=meta.title+" · испанский";document.getElementById("ttl").textContent=meta.title;
 const sp=s=>(s||"").split(";").map(x=>x.trim()).filter(Boolean);
@@ -216,7 +217,7 @@ function listAll(){
   const c={learned:0,weak:0,prog:0,new:0};W.forEach(w=>c[status(w)]++);
   const rows=order(W,true);
   S.innerHTML=`<div class="sum">${["learned","weak","prog","new"].map(k=>`<span class="tag t-${k}">${TAG[k]}: ${c[k]}</span>`).join("")}</div>
-  <div class="meta"><span>${W.length} слов и выражений. Выучено — 3 правильных ответа подряд.</span><button class="link" type="button" id="rst">Сбросить прогресс</button></div>
+  <div class="meta"><span>${W.length} ${plural(W.length,"слово","слова","слов")}. Выучено — 3 правильных ответа подряд.</span><button class="link" type="button" id="rst">Сбросить прогресс</button></div>
   <table><tbody>${rows.map(w=>{const s=stat(w),k=status(w);return `<tr><td>${esc(w.es)}</td><td>${esc(w.ru)}</td><td class="st"><span class="tag t-${k}">${TAG[k]}</span>${s.r+s.w?`<span class="cnt">${s.r} ✓ · ${s.w} ✗</span>`:""}</td></tr>`}).join("")}</tbody></table>`;
   let armed=false;const r=$("#rst");
   r.onclick=()=>{if(!armed){armed=true;r.textContent="Точно сбросить? Нажмите ещё раз";return}
@@ -245,7 +246,7 @@ document.addEventListener("keydown",e=>{if(!cur)return;
   if(e.key==="Enter"&&cur.enter&&(!(e.target instanceof HTMLButtonElement)||e.target.classList.contains("opt"))){e.preventDefault();cur.enter()}
   else if(cur.key&&/^[1-4]$/.test(e.key)&&!(e.target instanceof HTMLInputElement))cur.key(+e.key)});
 window.addEventListener("hashchange",()=>run(location.hash.slice(1)));
-$("#sub").textContent=`${W.length} слов и выражений${meta.sub?" · "+meta.sub:""} · `;$("#sub").append(Object.assign(document.createElement("span"),{id:"prog"}));updProg();
+$("#sub").textContent=`${W.length} ${plural(W.length,"слово","слова","слов")}${meta.sub?" · "+meta.sub:""} · `;$("#sub").append(Object.assign(document.createElement("span"),{id:"prog"}));updProg();
 if(SET.isLatest)$("#badge").hidden=false;
 updChips();run(location.hash.slice(1));
 }
