@@ -1,10 +1,17 @@
 {
-  "latest": "57-58",
+  "latest": "coco-4",
   "sets": [
     {
       "id": "57-58",
       "title": "Лекции 57–58",
       "sub": "словарь лекций 57 и 58",
+      "lang": "es-ES",
+      "date": "2026-11-27"
+    },
+    {
+      "id": "coco-4",
+      "title": "COCO, часть 4",
+      "sub": "словарь Quizlet «COCO – Parte 4»",
       "lang": "es-ES",
       "date": "2026-11-27"
     }
