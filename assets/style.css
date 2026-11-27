@@ -78,3 +78,6 @@ input[type=text]{min-height:46px;padding:10px 12px}.acc{gap:4px;margin-top:6px}.
 .wrap>.back{order:-2;align-self:flex-start}.wrap>.stage{order:-1;margin-bottom:18px}
 .wrap>.badge{align-self:flex-start;margin-bottom:4px}
 }
+.act{display:flex;align-items:flex-start;flex-wrap:wrap;gap:10px 16px;margin-top:16px}.act .btns{display:flex;gap:8px;flex:none}
+.act .btn.main{min-width:140px}.act .fb{flex:1 1 180px;margin:0;min-height:0;line-height:1.35;padding-top:2px}.fb.hint{color:var(--muted);font-size:15px}
+@media(max-width:600px){.act{margin-top:12px;gap:8px 12px}.act .btn.main{min-width:120px}.act .fb{font-size:15px}}

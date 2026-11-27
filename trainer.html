@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css?v=5">
+<link rel="stylesheet" href="assets/style.css?v=6">
 </head>
 <body>
 <div class="wrap">
@@ -86,31 +86,33 @@ const LBL={"mc-ru-es":"Выберите перевод на испанский",
 function ask(w,kind,done,hd){
   const toEs=kind.endsWith("-es"),mc=kind.startsWith("mc");let opts=[],fin=false;
   if(mc)opts=shuffle([{t:toEs?w.es:w.ru,ok:true},...distractors(w,toEs)]);
+  const act=b=>`<div class="act"><div class="btns" id="btns">${b}</div><div class="fb" id="fb" aria-live="polite"></div></div>`;
   S.innerHTML=hd+`<div class="lbl">${LBL[kind]}</div><div class="prompt"><span>${esc(toEs?w.ru:w.es)}</span></div>`+
-   (mc?`<div class="opts">${opts.map((o,i)=>`<button class="opt" type="button" data-i="${i}"><kbd>${i+1}</kbd><span>${esc(o.t)}</span></button>`).join("")}</div><div class="err" id="er" aria-live="polite"></div><div class="row" id="mcr"><button class="btn main" type="button" id="ck">Проверить</button></div>`
-   :`<form id="f" autocomplete="off"><input type="text" id="in" placeholder="${toEs?"Ответ по-испански":"Ответ по-русски"}" autocapitalize="off" autocorrect="off" spellcheck="false" lang="${toEs?"es":"ru"}" aria-label="Ваш ответ">${toEs?`<div class="acc" aria-label="Буквы с ударением">${"áéíóúñü¿¡".split("").map(c=>`<button type="button" data-ch="${c}">${c}</button>`).join("")}</div>`:""}<div class="err" id="er" aria-live="polite"></div><div class="row"><button class="btn main" type="submit">Проверить</button><button class="btn" type="button" id="idk">Не знаю</button></div></form>`)+
-   `<div class="fb" id="fb" aria-live="polite"></div><div class="row" id="acts"></div>`;
+   (mc?`<div class="opts">${opts.map((o,i)=>`<button class="opt" type="button" data-i="${i}" aria-pressed="false"><kbd>${i+1}</kbd><span>${esc(o.t)}</span></button>`).join("")}</div>`+act(`<button class="btn main" type="button" id="ck">Проверить</button>`)
+   :`<form id="f" autocomplete="off"><input type="text" id="in" placeholder="${toEs?"Ответ по-испански":"Ответ по-русски"}" autocapitalize="off" autocorrect="off" spellcheck="false" lang="${toEs?"es":"ru"}" aria-label="Ваш ответ">${toEs?`<div class="acc" aria-label="Буквы с ударением">${"áéíóúñü¿¡".split("").map(c=>`<button type="button" data-ch="${c}">${c}</button>`).join("")}</div>`:""}`+act(`<button class="btn main" type="submit" id="ck">Проверить</button><button class="btn" type="button" id="idk">Не знаю</button>`)+`</form>`);
+  const hint=t=>{const fb=$("#fb");fb.className="fb hint";fb.textContent=t};
+  const clearHint=()=>{if(!fin){const fb=$("#fb");fb.className="fb";fb.textContent=""}};
   const finish=(ok,html,override)=>{fin=true;const fb=$("#fb");fb.className="fb "+(ok?"ok":"bad");fb.innerHTML=html;
     if(!ok)S.querySelector(".prompt").classList.add("shake");
-    $("#acts").innerHTML=`<button class="btn main" type="button" id="nx">Дальше →</button>`+(override?`<button class="btn" type="button" id="ov">Я был прав, засчитать</button>`:"");
+    $("#btns").innerHTML=`<button class="btn main" type="button" id="nx">Дальше →</button>`+(override?`<button class="btn" type="button" id="ov">Я был прав</button>`:"");
     let res=ok,gone=false;const go=()=>{if(gone)return;gone=true;cur=null;rec(w,res);done(res)};
     $("#nx").onclick=go;if(override)$("#ov").onclick=()=>{res=true;go()};
-    cur={enter:go};$("#nx").focus();
+    cur={enter:go};$("#nx").focus({preventScroll:true});
   };
   if(mc){
     const bs=[...S.querySelectorAll(".opt")];let pick=-1;
-    const choose=i=>{if(fin)return;pick=i;bs.forEach((x,j)=>{x.classList.toggle("sel",j===i);x.setAttribute("aria-pressed",j===i)});$("#er").textContent=""};
-    const confirm=()=>{if(fin)return;if(pick<0){$("#er").textContent="Сначала выберите вариант";return}
-      const b=bs[pick],o=opts[pick],ok=o.ok;$("#mcr").style.display="none";
+    const choose=i=>{if(fin)return;pick=i;bs.forEach((x,j)=>{x.classList.toggle("sel",j===i);x.setAttribute("aria-pressed",j===i)});clearHint()};
+    const confirm=()=>{if(fin)return;if(pick<0)return hint("Сначала выберите вариант");
+      const b=bs[pick],o=opts[pick],ok=o.ok;
       bs.forEach((x,i)=>{x.disabled=true;x.classList.remove("sel");if(opts[i].ok)x.classList.add("ok")});if(!ok)b.classList.add("bad");
       finish(ok,ok?"Верно!":`Правильно: <b>${esc(toEs?w.es:w.ru)}</b>${o.gl?`<span class="note">Вы выбрали ${esc(o.gl)}</span>`:""}`,false)};
-    bs.forEach((b,i)=>{b.setAttribute("aria-pressed","false");b.onclick=()=>choose(i)});$("#ck").onclick=confirm;
+    bs.forEach((b,i)=>b.onclick=()=>choose(i));$("#ck").onclick=confirm;
     cur={key:k=>{if(bs[k-1])choose(k-1)},enter:confirm};
   }else{
-    const inp=$("#in");inp.focus();inp.oninput=()=>{$("#er").textContent=""};
-    S.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>{inp.setRangeText(b.dataset.ch,inp.selectionStart,inp.selectionEnd,"end");inp.focus();$("#er").textContent=""});
-    const check=skip=>{if(fin)return;const v=inp.value;if(!skip&&!v.trim()){$("#er").textContent="Сначала введите ответ";inp.focus();return}
-      inp.disabled=true;S.querySelectorAll("#f button").forEach(b=>b.disabled=true);S.querySelectorAll("#f .row,#f .acc").forEach(x=>x.style.display="none");
+    const inp=$("#in");inp.focus({preventScroll:true});inp.oninput=clearHint;
+    S.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>{inp.setRangeText(b.dataset.ch,inp.selectionStart,inp.selectionEnd,"end");inp.focus();clearHint()});
+    const check=skip=>{if(fin)return;const v=inp.value;if(!skip&&!v.trim()){hint("Сначала введите ответ");inp.focus();return}
+      inp.disabled=true;S.querySelectorAll("#f [data-ch]").forEach(b=>b.disabled=true);
       if(skip)return finish(false,`Ответ: <b>${esc(toEs?allEs(w):w.ru)}</b>`,false);
       const r=toEs?checkEs(w,v):checkRu(w,v);finish(r.ok,r.html,!toEs&&!r.ok)};
     $("#f").onsubmit=e=>{e.preventDefault();check(false)};$("#idk").onclick=()=>check(true);cur={};
