@@ -1,6 +1,6 @@
 /* Shared styles for the catalog and the trainer.
    VOICE: warm, playful study tool, like a friend quizzing you over coffee
-   IDEA: a fiesta of papel picado (Coco and Día de Muertos run through these lessons)
+   IDEA: a calm study card, nothing above it on phones but the way back
    PICTURE: the working quiz card itself, under a strip of cut-paper flags
    COLOUR and TYPE: marigold lead, magenta support, teal accent; Nunito + Nunito Sans
    LAYOUT: one centred column; title, mode chips, big quiz card; stacks naturally on phones */
@@ -8,8 +8,7 @@
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Nunito Sans",system-ui,sans-serif;overflow-x:clip}
-.picado{display:block;width:100%;height:74px}.picado .h{fill:var(--bg)}.picado .str{stroke:var(--muted);stroke-width:1.5;fill:none}
-.wrap{max-width:780px;margin:0 auto;padding:4px max(4vw,16px) 48px}
+.wrap{max-width:780px;margin:0 auto;padding:20px max(4vw,16px) 48px}
 h1{font:800 clamp(28px,5vw,40px)/1.1 "Nunito",system-ui,sans-serif;margin:6px 0 4px;text-wrap:balance}
 .sub{color:var(--muted);margin:0 0 16px}
 .badge[hidden]{display:none}.badge{display:inline-block;background:var(--mag);color:#fff;font-size:13px;font-weight:700;padding:3px 12px;border-radius:999px}
@@ -61,7 +60,7 @@ h2{font:800 22px/1.2 "Nunito",system-ui,sans-serif;margin:0 0 12px}
 .card .t{font-size:19px;font-weight:700;margin-bottom:2px}.card .m,.hero .m{color:var(--muted);font-size:14px}
 .card .bar,.hero .bar{margin:12px 0 6px}.go{display:inline-block;margin-top:8px;font-weight:700;color:var(--teal)}
 @media(max-width:600px){
-.picado{height:38px}.wrap{padding:2px 14px 28px}
+.wrap{padding:2px 14px 28px}
 h1{margin:2px 0 2px;font-size:24px}.sub{font-size:13px;margin:0 0 8px;line-height:1.4}.back{padding:4px 0}
 .modes{gap:6px;padding-bottom:6px;margin-bottom:2px}.chip{font-size:14px;padding:6px 12px;min-height:40px}
 .desc{font-size:13px;line-height:1.4;margin:0 0 10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -73,4 +72,9 @@ input[type=text]{min-height:46px;padding:10px 12px}.acc{gap:4px;margin-top:6px}.
 .fb{margin-top:10px;font-size:16px;min-height:0}.note{font-size:13px}
 .flash{min-height:150px;padding:14px}.end{padding:16px 0}.foot{font-size:12px;margin-top:12px}
 .hero{padding:16px;margin-bottom:20px}.pairs{gap:8px;margin-top:8px}.pairs .col{gap:8px}.pairs .opt{min-height:42px;padding:8px}.lead{font-size:15px;margin-bottom:16px}
+}
+@media(max-width:600px){
+.wrap{display:flex;flex-direction:column;padding-top:4px}
+.wrap>.back{order:-2;align-self:flex-start}.wrap>.stage{order:-1;margin-bottom:18px}
+.wrap>.badge{align-self:flex-start;margin-bottom:4px}
 }
