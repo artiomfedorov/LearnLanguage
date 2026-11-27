@@ -7,7 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css?v=6">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#f28a17">
+<link rel="stylesheet" href="assets/style.css?v=7">
 </head>
 <body>
 <div class="wrap">
@@ -92,7 +96,7 @@ function ask(w,kind,done,hd){
    :`<form id="f" autocomplete="off"><input type="text" id="in" placeholder="${toEs?"Ответ по-испански":"Ответ по-русски"}" autocapitalize="off" autocorrect="off" spellcheck="false" lang="${toEs?"es":"ru"}" aria-label="Ваш ответ">${toEs?`<div class="acc" aria-label="Буквы с ударением">${"áéíóúñü¿¡".split("").map(c=>`<button type="button" data-ch="${c}">${c}</button>`).join("")}</div>`:""}`+act(`<button class="btn main" type="submit" id="ck">Проверить</button><button class="btn" type="button" id="idk">Не знаю</button>`)+`</form>`);
   const hint=t=>{const fb=$("#fb");fb.className="fb hint";fb.textContent=t};
   const clearHint=()=>{if(!fin){const fb=$("#fb");fb.className="fb";fb.textContent=""}};
-  const finish=(ok,html,override)=>{fin=true;const fb=$("#fb");fb.className="fb "+(ok?"ok":"bad");fb.innerHTML=html;
+  const finish=(ok,html,override)=>{fin=true;const fb=$("#fb");fb.className="fb "+(ok?"ok":"bad");fb.innerHTML=`<div>${html}</div>`;
     if(!ok)S.querySelector(".prompt").classList.add("shake");
     $("#btns").innerHTML=`<button class="btn main" type="button" id="nx">Дальше →</button>`+(override?`<button class="btn" type="button" id="ov">Я был прав</button>`:"");
     let res=ok,gone=false;const go=()=>{if(gone)return;gone=true;cur=null;rec(w,res);done(res)};
