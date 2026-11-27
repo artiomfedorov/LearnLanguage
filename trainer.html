@@ -44,6 +44,8 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const MK="espanol-mis-"+SET.id;let MIS=new Set();try{MIS=new Set(JSON.parse(localStorage.getItem(MK)||"[]"))}catch(e){}
 const saveMis=()=>{try{localStorage.setItem(MK,JSON.stringify([...MIS]))}catch(e){}updChips()};
+const RK="espanol-mc-"+SET.id;let RETRY={};try{RETRY=JSON.parse(localStorage.getItem(RK)||"{}")||{}}catch(e){}
+const saveRetry=()=>{try{localStorage.setItem(RK,JSON.stringify(RETRY))}catch(e){}};
 const addMis=w=>{MIS.add(w.id);saveMis()},delMis=w=>{MIS.delete(w.id);saveMis()};
 const allEs=w=>[w.es,...w.ea].join(" / ");
 const ART=/^(el|la|los|las)\s+/;
@@ -90,7 +92,10 @@ const head=(pct,l,r)=>`<div class="meta"><span>${l}</span><span>${r}</span></div
 const LBL={"mc-ru-es":"Выберите перевод на испанский","mc-es-ru":"Выберите перевод на русский","type-es-ru":"Напишите перевод по-русски","type-ru-es":"Напишите перевод по-испански"};
 function ask(w,kind,done,hd){
   const toEs=kind.endsWith("-es"),mc=kind.startsWith("mc");let opts=[],fin=false;
-  if(mc)opts=shuffle([{t:toEs?w.es:w.ru,ok:true},...distractors(w,toEs)]);
+  const rk=w.es+"|"+kind;
+  if(mc){const prev=(RETRY[rk]||[]).filter(o=>o&&o.t&&o.t!==(toEs?w.es:w.ru)),d=prev.slice(0,3);
+    if(d.length<3)for(const o of distractors(w,toEs)){if(d.length>=3)break;if(!d.some(x=>x.t===o.t))d.push(o)}
+    opts=shuffle([{t:toEs?w.es:w.ru,ok:true},...d.map(o=>({t:o.t,ok:false,gl:o.gl}))])}
   const act=b=>`<div class="act"><div class="btns" id="btns">${b}</div><div class="fb" id="fb" aria-live="polite"></div></div>`;
   S.innerHTML=hd+`<div class="lbl">${LBL[kind]}</div><div class="prompt"><span>${esc(toEs?w.ru:w.es)}</span></div>`+
    (mc?`<div class="opts">${opts.map((o,i)=>`<button class="opt" type="button" data-i="${i}" aria-pressed="false"><kbd>${i+1}</kbd><span>${esc(o.t)}</span></button>`).join("")}</div>`+act(`<button class="btn main" type="button" id="ck">Проверить</button>`)
@@ -110,6 +115,7 @@ function ask(w,kind,done,hd){
     const confirm=()=>{if(fin)return;if(pick<0)return hint("Сначала выберите вариант");
       const b=bs[pick],o=opts[pick],ok=o.ok;
       bs.forEach((x,i)=>{x.disabled=true;x.classList.remove("sel");if(opts[i].ok)x.classList.add("ok")});if(!ok)b.classList.add("bad");
+      if(ok)delete RETRY[rk];else RETRY[rk]=[o,...opts.filter(x=>!x.ok&&x!==o)].map(x=>({t:x.t,gl:x.gl||""}));saveRetry();
       finish(ok,ok?"Верно!":`Правильно: <b>${esc(toEs?w.es:w.ru)}</b>${o.gl?`<span class="note">Вы выбрали ${esc(o.gl)}</span>`:""}`,false)};
     bs.forEach((b,i)=>b.onclick=()=>choose(i));$("#ck").onclick=confirm;
     cur={key:k=>{if(bs[k-1])choose(k-1)},enter:confirm};
@@ -152,9 +158,10 @@ function mix(list,isMis,sv){
   const take=()=>shuffle(pool.splice(0,10)).map(w=>({w,st:0,f:0,wrong:false}));
   if(sv){N=sv.N;learned=sv.learned;pool=byId(sv.pool);q=sv.q.filter(o=>W[o.id]).map(o=>({w:W[o.id],st:o.st,f:o.f,wrong:o.wrong}))}
   else{pool=order(list,isMis);N=pool.length;learned=0;q=take()}
+  const nL=()=>isMis?learned:W.filter(w=>status(w)==="learned").length,nN=isMis?N:W.length,lab=isMis?"Исправлено":"Выучено";
   const step=()=>{
-    if(!q.length){if(pool.length)q=take();else{clearRun(mode);return finishScreen(`Все ${N} слов пройдены!`,()=>start(mode,null),"Каждое слово прошло три этапа.")}}
-    saveRun(mode,{N,learned,pool:ids(pool),q:q.map(x=>({id:x.w.id,st:x.st,f:x.f,wrong:x.wrong})),info:`${isMis?"Ошибки":"Микс"}: выучено ${learned} из ${N}`});
+    if(!q.length){if(pool.length)q=take();else{clearRun(mode);return finishScreen(`Все ${N} ${plural(N,"слово","слова","слов")} пройдены!`,()=>start(mode,null),"Каждое слово прошло три этапа.")}}
+    saveRun(mode,{N,learned,pool:ids(pool),q:q.map(x=>({id:x.w.id,st:x.st,f:x.f,wrong:x.wrong})),info:`${isMis?"Ошибки":"Микс"}: ${lab.toLowerCase()} ${nL()} из ${nN}`});
     const it=q.shift();
     const dots=`<span class="dots" title="Этап ${it.st+1} из 3">${[0,1,2].map(k=>`<b class="${k<it.st?"on":k===it.st?"now":""}"></b>`).join("")} этап ${it.st+1} из 3</span>`;
     ask(it.w,K[it.st],ok=>{
@@ -162,7 +169,7 @@ function mix(list,isMis,sv){
       else{it.f++;it.wrong=true;addMis(it.w);q.splice(Math.min([5,3,2,1][Math.min(it.f-1,3)],q.length),0,it)}
       if(pool.length&&q.length&&q.every(x=>x.wrong)){const m=take();q.forEach((x,k)=>m.splice(Math.min(k,m.length),0,x));q=m}
       step();
-    },head(learned/N*100,`Выучено ${learned} из ${N}`,dots));
+    },head(nL()/nN*100,`${lab} ${nL()} из ${nN}`,dots));
   };step();
 }
 function linear(kind,sv){
